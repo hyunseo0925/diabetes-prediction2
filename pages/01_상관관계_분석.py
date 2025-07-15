@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
-diabetes_prediction_dataset - diabetes_prediction_dataset.csv
 
 st.set_page_config(page_title="상관관계 분석", layout="wide")
 st.title("📈 당뇨병 관련 변수 간의 상관관계 분석")
@@ -10,12 +9,12 @@ st.title("📈 당뇨병 관련 변수 간의 상관관계 분석")
 # 데이터 불러오기
 @st.cache_data
 def load_data():
-    return pd.read_csv("diabetes_prediction_dataset.csv")
+    return pd.read_csv("diabetes_prediction_dataset - diabetes_prediction_dataset.csv")
 
 try:
     df = load_data()
 except FileNotFoundError:
-    st.error("❌ 'diabetes_prediction_dataset.csv' 파일이 없습니다.")
+    st.error("❌ 'diabetes_prediction_dataset - diabetes_prediction_dataset.csv' 파일이 없습니다.")
     st.stop()
 
 # 주요 변수 선택
