@@ -4,3 +4,4 @@ plotly
 numpy
 matplotlib  # ← 이 줄 추가!
 scikit-learn
+openpyxl
