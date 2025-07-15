@@ -12,7 +12,7 @@ st.title("🧠 생활습관 변화 시뮬레이터: 당뇨병 위험 예측")
 # 데이터 불러오기
 @st.cache_data
 def load_data():
-    file_path = "diabetes_prediction_dataset.csv"
+    file_path = "diabetes_prediction_dataset - diabetes_prediction_dataset.csv"
     if not os.path.exists(file_path):
         st.error(f"❌ 파일 '{file_path}'이 존재하지 않습니다. 올바른 경로에 CSV 파일을 업로드했는지 확인해주세요.")
         st.stop()
