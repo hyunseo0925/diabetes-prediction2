@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import numpy as np
+diabetes_prediction_dataset - diabetes_prediction_dataset.csv
 
 st.set_page_config(page_title="상관관계 분석", layout="wide")
 st.title("📈 당뇨병 관련 변수 간의 상관관계 분석")
