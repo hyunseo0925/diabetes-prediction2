@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 
 # 파일 경로 - 필요 시 수정
-csv_path = "diabetes_prediction_dataset.csv"
+csv_path = "diabetes_prediction_dataset - diabetes_prediction_dataset.csv"
 
 # CSV 읽기
 df = pd.read_csv(csv_path)
