@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 import plotly.graph_objects as go
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -8,18 +9,28 @@ from sklearn.model_selection import train_test_split
 st.set_page_config(page_title="생활습관 변화 시뮬레이터", layout="centered")
 st.title("🧠 생활습관 변화 시뮬레이터: 당뇨병 위험 예측")
 
+# CSV 파일 경로
+file_path = "diabetes_prediction_dataset - diabetes_prediction_dataset.csv"
+
 # 데이터 불러오기
 @st.cache_data
 def load_data():
-    df = pd.read_csv("diabetes_prediction_dataset - diabetes_prediction_dataset.csv")
+    if not os.path.exists(file_path):
+        st.error(f"❌ '{file_path}' 파일이 없습니다. 같은 디렉토리에 CSV 파일을 넣어주세요.")
+        st.stop()
+
+    df = pd.read_csv(file_path)
     df = df.dropna()
+
+    # 인코딩
     df['gender'] = df['gender'].map({'Male': 0, 'Female': 1, 'Other': 2})
     df['smoking_history'] = df['smoking_history'].astype('category').cat.codes
-    df['physical_activity'] = (
-        np.where(df['physical_activity'] == "Yes", 1, 0)
-        if 'physical_activity' in df.columns
-        else np.random.randint(0, 2, len(df))
-    )
+
+    if 'physical_activity' in df.columns:
+        df['physical_activity'] = np.where(df['physical_activity'] == "Yes", 1, 0)
+    else:
+        df['physical_activity'] = np.random.randint(0, 2, len(df))
+
     return df
 
 df = load_data()
@@ -33,7 +44,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 model = RandomForestClassifier(random_state=42)
 model.fit(X_train, y_train)
 
-# 사용자 입력
+# 사용자 입력 받기
 st.subheader("💡 현재 상태 입력")
 age = st.slider("나이", 10, 100, 45)
 bmi = st.slider("BMI (체질량지수)", 15.0, 45.0, 24.0)
@@ -43,23 +54,33 @@ smoking = st.selectbox("흡연 여부", ['never', 'former', 'current', 'ever', '
 hypertension = st.checkbox("고혈압 있음", value=False)
 heart_disease = st.checkbox("심장질환 있음", value=False)
 
-# 시뮬레이션
 st.subheader("🔁 생활습관 변화 시뮬레이션")
 smoking_new = st.selectbox("변경 후 흡연 여부", ['never', 'former', 'current', 'ever', 'not current', 'No Info'], index=0)
 
-# 인코딩
+# 고정 인코딩 매핑
+gender_map = {'Male': 0, 'Female': 1, 'Other': 2}
+smoking_map = {
+    'never': 0,
+    'former': 1,
+    'current': 2,
+    'ever': 3,
+    'not current': 4,
+    'No Info': 5
+}
+
+# 입력 데이터프레임 생성
 input_data = pd.DataFrame([{
     'age': age,
     'bmi': bmi,
     'blood_glucose_level': glucose,
-    'gender': {'Male': 0, 'Female': 1, 'Other': 2}[gender],
-    'smoking_history': pd.Series([smoking]).astype('category').cat.codes[0],
+    'gender': gender_map[gender],
+    'smoking_history': smoking_map[smoking],
     'hypertension': int(hypertension),
     'heart_disease': int(heart_disease)
 }])
 
 input_new = input_data.copy()
-input_new['smoking_history'] = pd.Series([smoking_new]).astype('category').cat.codes[0]
+input_new['smoking_history'] = smoking_map[smoking_new]
 
 # 예측
 prob_before = model.predict_proba(input_data)[0][1] * 100
@@ -86,15 +107,18 @@ st.plotly_chart(fig, use_container_width=True)
 
 # 결과 해석
 st.markdown("### 🩺 결과 해석")
-if prob_after < prob_before:
-    st.success(f"생활습관 개선으로 당뇨병 위험이 **{prob_before - prob_after:.1f}% 감소**하였습니다.")
+diff = prob_after - prob_before
+if abs(diff) < 0.01:
+    st.info("생활습관 변화로 인한 당뇨병 위험 변화가 거의 없습니다.")
+elif diff < 0:
+    st.success(f"생활습관 개선으로 당뇨병 위험이 **{abs(diff):.2f}% 감소**하였습니다.")
 else:
-    st.warning(f"생활습관 변화로 당뇨병 위험이 **{prob_after - prob_before:.1f}% 증가**하였습니다.")
+    st.warning(f"생활습관 변화로 당뇨병 위험이 **{diff:.2f}% 증가**하였습니다.")
 
 st.markdown("---")
 st.markdown("### 🔬 예방의학적 시사점")
 st.markdown("""
-- 흡연은 인슐린 저항성을 증가시키며, 이는 당뇨병 발생 위험을 높이는 주요 요인입니다.
-- 생활습관 개선(금연, 체중 감량, 혈압 관리)은 당뇨병을 **예방하거나 지연**시키는 데 매우 효과적입니다.
-- 본 시뮬레이터는 건강한 선택이 어떻게 질병 위험을 낮추는지를 **직관적으로 보여줍니다.**
+- 흡연은 인슐린 저항성을 증가시켜 당뇨병 위험을 높이는 주요 원인입니다.
+- 금연, 체중 감량, 혈당·혈압 관리 등 생활습관 개선은 당뇨병을 예방하거나 지연시킬 수 있습니다.
+- 이 시뮬레이터는 건강한 선택이 질병 위험도에 어떤 영향을 주는지 **직관적으로 보여줍니다**.
 """)
