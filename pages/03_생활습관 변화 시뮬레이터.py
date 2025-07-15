@@ -11,15 +11,13 @@ st.title("🧠 생활습관 변화 시뮬레이터: 당뇨병 위험 예측")
 # 데이터 불러오기
 @st.cache_data
 def load_data():
-    df = pd.read_csv("diabetes_prediction_dataset.csv")
+    df = pd.read_excel("diabetes_prediction_dataset.xlsx")  # <- XLSX로 수정
     df = df.dropna()
     df['gender'] = df['gender'].map({'Male': 0, 'Female': 1, 'Other': 2})
     df['smoking_history'] = df['smoking_history'].astype('category').cat.codes
-    df['physical_activity'] = (
-        np.where(df['physical_activity'] == "Yes", 1, 0)
-        if 'physical_activity' in df.columns
-        else np.random.randint(0, 2, len(df))
-    )
+    df['physical_activity'] = np.where('physical_activity' in df.columns,
+                                       np.where(df['physical_activity'] == "Yes", 1, 0),
+                                       np.random.randint(0, 2, len(df)))
     return df
 
 df = load_data()
@@ -43,7 +41,7 @@ smoking = st.selectbox("흡연 여부", ['never', 'former', 'current', 'ever', '
 hypertension = st.checkbox("고혈압 있음", value=False)
 heart_disease = st.checkbox("심장질환 있음", value=False)
 
-# 시뮬레이션
+# 가상 변화 설정
 st.subheader("🔁 생활습관 변화 시뮬레이션")
 smoking_new = st.selectbox("변경 후 흡연 여부", ['never', 'former', 'current', 'ever', 'not current', 'No Info'], index=0)
 
@@ -65,26 +63,25 @@ input_new['smoking_history'] = pd.Series([smoking_new]).astype('category').cat.c
 prob_before = model.predict_proba(input_data)[0][1] * 100
 prob_after = model.predict_proba(input_new)[0][1] * 100
 
-# 시각화
+# 결과 시각화
 fig = go.Figure()
+
 fig.add_trace(go.Indicator(
     mode="gauge+number+delta",
     value=prob_after,
     delta={'reference': prob_before, 'increasing': {'color': "red"}, 'decreasing': {'color': "green"}},
-    gauge={
-        'axis': {'range': [0, 100]},
-        'bar': {'color': "darkblue"},
-        'steps': [
-            {'range': [0, 30], 'color': "lightgreen"},
-            {'range': [30, 70], 'color': "yellow"},
-            {'range': [70, 100], 'color': "red"}
-        ]
-    },
+    gauge={'axis': {'range': [0, 100]},
+           'bar': {'color': "darkblue"},
+           'steps': [
+               {'range': [0, 30], 'color': "lightgreen"},
+               {'range': [30, 70], 'color': "yellow"},
+               {'range': [70, 100], 'color': "red"}]},
     title={'text': "예상 당뇨병 위험도 (%)"}
 ))
+
 st.plotly_chart(fig, use_container_width=True)
 
-# 결과 해석
+# 해석
 st.markdown("### 🩺 결과 해석")
 if prob_after < prob_before:
     st.success(f"생활습관 개선으로 당뇨병 위험이 **{prob_before - prob_after:.1f}% 감소**하였습니다.")
